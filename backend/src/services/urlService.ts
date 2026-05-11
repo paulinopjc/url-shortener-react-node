@@ -1,11 +1,20 @@
 import pool from '../db/connection'
 import { generateCode } from '../lib/generateCode'
-import { HttpError } from '../middleware/httpError'
+import { HttpError } from '../middleware/errorHandler'
 import { Url, Click, ClickStats, CreateUrlInput } from '../types'
+
+// query used by both getAll and getById - joins click count onto urls
+const URL_WITH_CLICKS = `
+  SELECT u.*, COALESCE(c.click_count, 0)::int AS click_count
+  FROM urls u
+  LEFT JOIN (
+    SELECT url_id, COUNT(*) AS click_count FROM clicks GROUP BY url_id
+  ) c ON c.url_id = u.id`
 
 export const createUrl = async (input: CreateUrlInput): Promise<Url> => {
   const code = input.custom_code || generateCode()
 
+  // check if code already exists
   const existing = await pool.query('SELECT id FROM urls WHERE code = $1', [code])
   if (existing.rows.length > 0) {
     throw new HttpError(409, `Code "${code}" is already taken`)
@@ -19,46 +28,25 @@ export const createUrl = async (input: CreateUrlInput): Promise<Url> => {
 }
 
 export const getAllUrls = async (): Promise<Url[]> => {
-  const result = await pool.query(`
-    SELECT u.*, COALESCE(c.click_count, 0)::int AS click_count
-    FROM urls u
-    LEFT JOIN (
-      SELECT url_id, COUNT(*) AS click_count FROM clicks GROUP BY url_id
-    ) c ON c.url_id = u.id
-    ORDER BY u.created_at DESC
-  `)
+  const result = await pool.query(URL_WITH_CLICKS + ' ORDER BY u.created_at DESC')
   return result.rows
 }
 
-export const getUrlById = async (id: number): Promise<Url> => {
-  const result = await pool.query(
-    `SELECT u.*, COALESCE(c.click_count, 0)::int AS click_count
-     FROM urls u
-     LEFT JOIN (
-       SELECT url_id, COUNT(*) AS click_count FROM clicks GROUP BY url_id
-     ) c ON c.url_id = u.id
-     WHERE u.id = $1`,
-    [id]
-  )
-  if (result.rows.length === 0) {
-    throw new HttpError(404, 'URL not found')
-  }
+export async function getUrlById(id: number): Promise<Url> {
+  const result = await pool.query(URL_WITH_CLICKS + ' WHERE u.id = $1', [id])
+  if (result.rows.length === 0) throw new HttpError(404, 'URL not found')
   return result.rows[0]
 }
 
-export const getUrlByCode = async (code: string): Promise<Url> => {
+export async function getUrlByCode(code: string): Promise<Url> {
   const result = await pool.query('SELECT * FROM urls WHERE code = $1', [code])
-  if (result.rows.length === 0) {
-    throw new HttpError(404, 'Short URL not found')
-  }
+  if (result.rows.length === 0) throw new HttpError(404, 'Short URL not found')
   return result.rows[0]
 }
 
-export const deleteUrl = async (id: number): Promise<void> => {
+export async function deleteUrl(id: number): Promise<void> {
   const result = await pool.query('DELETE FROM urls WHERE id = $1 RETURNING id', [id])
-  if (result.rows.length === 0) {
-    throw new HttpError(404, 'URL not found')
-  }
+  if (result.rows.length === 0) throw new HttpError(404, 'URL not found')
 }
 
 export const recordClick = async (
@@ -74,41 +62,35 @@ export const recordClick = async (
   return result.rows[0]
 }
 
-export const getClickStats = async (urlId: number): Promise<ClickStats> => {
+export async function getClickStats(urlId: number): Promise<ClickStats> {
+  // make sure the url exists first
   const urlCheck = await pool.query('SELECT id FROM urls WHERE id = $1', [urlId])
-  if (urlCheck.rows.length === 0) {
-    throw new HttpError(404, 'URL not found')
-  }
+  if (urlCheck.rows.length === 0) throw new HttpError(404, 'URL not found')
 
-  const totalResult = await pool.query(
-    'SELECT COUNT(*)::int AS total FROM clicks WHERE url_id = $1',
-    [urlId]
-  )
-
-  const todayResult = await pool.query(
-    `SELECT COUNT(*)::int AS total FROM clicks
-     WHERE url_id = $1 AND created_at >= CURRENT_DATE`,
-    [urlId]
-  )
-
-  const referrerResult = await pool.query(
-    `SELECT COALESCE(referrer, 'Direct') AS referrer, COUNT(*)::int AS count
-     FROM clicks WHERE url_id = $1
-     GROUP BY referrer ORDER BY count DESC LIMIT 10`,
-    [urlId]
-  )
-
-  const dailyResult = await pool.query(
-    `SELECT created_at::date AS date, COUNT(*)::int AS count
-     FROM clicks WHERE url_id = $1
-     GROUP BY created_at::date ORDER BY date DESC LIMIT 30`,
-    [urlId]
-  )
+  const [totalRes, todayRes, referrerRes, dailyRes] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int AS total FROM clicks WHERE url_id = $1', [urlId]),
+    pool.query(
+      'SELECT COUNT(*)::int AS total FROM clicks WHERE url_id = $1 AND created_at >= CURRENT_DATE',
+      [urlId]
+    ),
+    pool.query(
+      `SELECT COALESCE(referrer, 'Direct') AS referrer, COUNT(*)::int AS count
+       FROM clicks WHERE url_id = $1
+       GROUP BY referrer ORDER BY count DESC LIMIT 10`,
+      [urlId]
+    ),
+    pool.query(
+      `SELECT created_at::date AS date, COUNT(*)::int AS count
+       FROM clicks WHERE url_id = $1
+       GROUP BY created_at::date ORDER BY date DESC LIMIT 30`,
+      [urlId]
+    ),
+  ])
 
   return {
-    total_clicks: totalResult.rows[0].total,
-    clicks_today: todayResult.rows[0].total,
-    top_referrers: referrerResult.rows,
-    clicks_per_day: dailyResult.rows,
+    total_clicks: totalRes.rows[0].total,
+    clicks_today: todayRes.rows[0].total,
+    top_referrers: referrerRes.rows,
+    clicks_per_day: dailyRes.rows,
   }
 }

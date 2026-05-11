@@ -1,12 +1,9 @@
-import crypto from 'crypto'
-
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
 export const generateCode = (length = 6): string => {
-  const bytes = crypto.randomBytes(length)
-  let code = ''
+  let result = ''
   for (let i = 0; i < length; i++) {
-    code += CHARS[bytes[i] % CHARS.length]
+    result += CHARS.charAt(Math.floor(Math.random() * CHARS.length))
   }
-  return code
+  return result
 }

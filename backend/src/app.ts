@@ -3,8 +3,7 @@ import cors from 'cors'
 import morgan from 'morgan'
 import urlRoutes from './routes/urlRoutes'
 import { redirect } from './controllers/urlController'
-import { errorHandler } from './middleware/errorHandler'
-import { notFound } from './middleware/notFound'
+import { errorHandler, notFound } from './middleware/errorHandler'
 
 export const createApp = () => {
   const app = express()

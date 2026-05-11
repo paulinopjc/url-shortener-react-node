@@ -1,15 +1,18 @@
 import { Link } from 'react-router-dom'
 import { Url } from '../../types'
 
-interface Props {
+export default function UrlList({
+  urls,
+  onDelete,
+  backendUrl,
+}: {
   urls: Url[]
   onDelete: (id: number) => void
   backendUrl: string
-}
-
-export default function UrlList({ urls, onDelete, backendUrl }: Props) {
+}) {
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(`${backendUrl}/r/${code}`)
+    // TODO: show a toast or something instead of silently copying
   }
 
   if (urls.length === 0) {
@@ -26,10 +29,7 @@ export default function UrlList({ urls, onDelete, backendUrl }: Props) {
         <div key={url.id} className="bg-white rounded-lg shadow p-4 flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <Link
-                to={`/urls/${url.id}`}
-                className="text-indigo-600 font-medium text-sm hover:underline"
-              >
+              <Link to={`/urls/${url.id}`} className="text-indigo-600 font-medium text-sm hover:underline">
                 {backendUrl}/r/{url.code}
               </Link>
               <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
@@ -37,7 +37,7 @@ export default function UrlList({ urls, onDelete, backendUrl }: Props) {
               </span>
             </div>
             <p className="text-gray-500 text-sm truncate mt-1">
-              {url.title ? `${url.title} - ` : ''}{url.original_url}
+              {url.title && `${url.title} - `}{url.original_url}
             </p>
           </div>
 
@@ -45,14 +45,12 @@ export default function UrlList({ urls, onDelete, backendUrl }: Props) {
             <button
               onClick={() => copyToClipboard(url.code)}
               className="text-gray-400 hover:text-gray-600 text-sm px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              title="Copy short URL"
             >
               Copy
             </button>
             <button
               onClick={() => onDelete(url.id)}
               className="text-red-400 hover:text-red-600 text-sm px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-red-50 transition-colors"
-              title="Delete"
             >
               Delete
             </button>

@@ -13,8 +13,7 @@ export default function Dashboard() {
 
   const loadUrls = useCallback(async () => {
     try {
-      const data = await fetchUrls()
-      setUrls(data)
+      setUrls(await fetchUrls())
     } catch {
       setError('Failed to load URLs')
     }
@@ -30,12 +29,8 @@ export default function Dashboard() {
     try {
       await createUrl(input)
       await loadUrls()
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response: { data: { error?: string } } }).response?.data?.error
-          : 'Failed to create URL'
-      setError(message || 'Failed to create URL')
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create URL')
     } finally {
       setLoading(false)
     }
@@ -44,7 +39,7 @@ export default function Dashboard() {
   const handleDelete = async (id: number) => {
     try {
       await deleteUrl(id)
-      setUrls((prev) => prev.filter((u) => u.id !== id))
+      setUrls(prev => prev.filter(u => u.id !== id))
     } catch {
       setError('Failed to delete URL')
     }

@@ -14,8 +14,8 @@ export default function Layout() {
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <Outlet />
       </main>
-      <footer className="border-t border-gray-200 py-4 text-center text-sm text-gray-400">
-        Built with React + Node.js + TypeScript
+      <footer className="border-t border-gray-200 py-4 text-center text-xs text-gray-400">
+        &copy; {new Date().getFullYear()} Snip
       </footer>
     </div>
   )
