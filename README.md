@@ -2,8 +2,8 @@
 
 Shorten URLs and track clicks. Built with React, Node.js, TypeScript, and PostgreSQL.
 
-**Live:** [url-shortener-react-node.vercel.app](https://url-shortener-react-node.vercel.app)
-**API:** [url-shortener-api-XXXX.onrender.com](https://url-shortener-api-XXXX.onrender.com)
+**Live:** [url-shortener-react-node-lovat.vercel.app](https://url-shortener-react-node-lovat.vercel.app)
+**API:** [url-shortener-react-node.onrender.com](https://url-shortener-react-node.onrender.com)
 
 ## Stack
 

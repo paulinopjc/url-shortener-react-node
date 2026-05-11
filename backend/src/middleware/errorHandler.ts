@@ -20,6 +20,11 @@ export const errorHandler = (
   _next: NextFunction
 ) => {
   if (err instanceof z.ZodError) {
+    // don't leak field details in production
+    if (process.env.NODE_ENV === 'production') {
+      res.status(400).json({ error: 'Validation failed' })
+      return
+    }
     const issues = err.issues.map((e) => ({
       field: e.path.join('.'),
       message: e.message,
