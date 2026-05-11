@@ -1,0 +1,124 @@
+{
+  "info": {
+    "name": "URL Shortener API",
+    "description": "URL Shortener with click analytics - Express 5 + TypeScript + PostgreSQL",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4003",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check if the API is running"
+      }
+    },
+    {
+      "name": "URLs",
+      "item": [
+        {
+          "name": "Create Short URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"original_url\": \"https://example.com/very-long-page-url\",\n  \"title\": \"Example Page\",\n  \"custom_code\": \"example\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/urls",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "urls"]
+            },
+            "description": "Create a new shortened URL. Title and custom_code are optional."
+          }
+        },
+        {
+          "name": "List All URLs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/urls",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "urls"]
+            },
+            "description": "Get all shortened URLs with click counts"
+          }
+        },
+        {
+          "name": "Get URL by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/urls/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "urls", "1"]
+            },
+            "description": "Get a single URL by its ID"
+          }
+        },
+        {
+          "name": "Get Click Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/urls/1/clicks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "urls", "1", "clicks"]
+            },
+            "description": "Get click statistics for a URL: total clicks, clicks today, top referrers, clicks per day"
+          }
+        },
+        {
+          "name": "Delete URL",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/urls/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "urls", "1"]
+            },
+            "description": "Delete a shortened URL and all its click data"
+          }
+        },
+        {
+          "name": "Redirect (Short URL)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/r/example",
+              "host": ["{{base_url}}"],
+              "path": ["r", "example"]
+            },
+            "description": "Visit a short URL - redirects to the original URL with 301 and records a click"
+          }
+        }
+      ]
+    }
+  ]
+}
